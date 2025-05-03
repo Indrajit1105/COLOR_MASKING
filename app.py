@@ -1,42 +1,58 @@
-# app.py
-#To run your app - python app.py
-
-from flask import Flask, render_template, request, send_file
+from flask import Flask, render_template, request
 import processor
 import os
-import time
+from processor import hex_to_bgr
+
 
 app = Flask(__name__)
 
+
+
 @app.route("/", methods=["GET", "POST"])
 def index():
-    selected_color = "Blue"
+    selected_color = "#0000ff"  # Default color blue
+    color_bgr = (255, 0, 0)     # Default BGR for blue
+    error_message = None
 
     if request.method == "POST":
-        selected_color = request.form["color"]
-        output_path = f"static/output_{selected_color.lower()}.jpg"
+        color_input = request.form.get("color_text") or request.form.get("color") or "#0000ff"
+        selected_color = color_input
 
-        # Check if the file already exists
+        try:
+            # Convert hex color to BGR
+            color_bgr = hex_to_bgr(color_input)
+        except ValueError as e:
+            # Show error message if invalid color format
+            error_message = str(e)
+            return render_template(
+                "index.html",
+                image=None,
+                selected=selected_color,
+                error=error_message
+            )
+
+        output_path = f"static/output_{color_input.strip('#').lower()}.jpg"
+
         if not os.path.exists(output_path):
-            processor.save_recolored_image(selected_color, output_path)
+            processor.save_custom_color_image(color_bgr, output_path)
 
         return render_template(
             "index.html",
             image=f"/{output_path}",
-            colors=processor.get_color_options(),
-            selected=selected_color
+            selected=selected_color,
+            error=error_message
         )
 
-    # GET request - initial load with default color
-    output_path = f"static/output_{selected_color.lower()}.jpg"
+    # If GET request or page reload, render with default image
+    output_path = f"static/output_{selected_color.strip('#').lower()}.jpg"
     if not os.path.exists(output_path):
-        processor.save_recolored_image(selected_color, output_path)
+        processor.save_custom_color_image(color_bgr, output_path)
 
     return render_template(
         "index.html",
         image=f"/{output_path}",
-        colors=processor.get_color_options(),
-        selected=selected_color
+        selected=selected_color,
+        error=error_message
     )
 
 if __name__ == "__main__":

@@ -1,23 +1,10 @@
-# processor.py
-
 import cv2
 import numpy as np
+import re
 
-img_path = "static/img.jpeg"
+img_path = "static/img4.webp"
 original = cv2.imread(img_path)
-original = cv2.resize(original, (500, 700))
-
-color_map = {
-    "Blue": (255, 0, 0),
-    "Green": (0, 255, 0),
-    "Yellow": (0, 255, 255),
-    "Purple": (255, 0, 255),
-    "White": (255, 255, 255),
-    "Black": (20, 20, 20),
-}
-
-def get_color_options():
-    return list(color_map.keys())
+original = cv2.resize(original, (700, 500))
 
 def get_bag_mask(image):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -29,8 +16,7 @@ def get_bag_mask(image):
     mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
     return cv2.bitwise_or(mask1, mask2)
 
-def recolor_bag(color_name):
-    color_bgr = color_map[color_name]
+def recolor_bag(color_bgr):
     mask = get_bag_mask(original)
 
     color_img = np.full(original.shape, color_bgr, dtype=np.uint8)
@@ -39,6 +25,15 @@ def recolor_bag(color_name):
     final = cv2.add(recolored, background)
     return final
 
-def save_recolored_image(color_name, save_path):
-    img = recolor_bag(color_name)
+def save_custom_color_image(color_bgr, save_path):
+    img = recolor_bag(color_bgr)
     cv2.imwrite(save_path, img)
+
+def hex_to_bgr(hex_color):
+    # Strip leading "#" if present and check if it's a valid hex
+    match = re.fullmatch(r"#?([0-9a-fA-F]{6})", hex_color.strip())
+    if not match:
+        raise ValueError("Invalid color format. Please use hex like #ff0000.")
+    hex_clean = match.group(1)
+    r, g, b = (int(hex_clean[i:i+2], 16) for i in (0, 2, 4))
+    return (b, g, r)  # Convert RGB to BGR for OpenCV
