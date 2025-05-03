@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import re
 
-img_path = "static/img4.webp"
+img_path = "static/bag.jpg"
 original = cv2.imread(img_path)
 original = cv2.resize(original, (700, 500))
 
